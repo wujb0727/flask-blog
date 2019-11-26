@@ -1,7 +1,6 @@
 from flask_login import current_user
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileRequired, FileAllowed
-from wtforms import FileField, SubmitField, StringField, TextAreaField, PasswordField, BooleanField
+from wtforms import SubmitField, StringField, PasswordField, BooleanField
 from wtforms.validators import Length, DataRequired, EqualTo, Email, ValidationError
 
 # 注册
@@ -19,8 +18,8 @@ class RegisterForm(FlaskForm):
         if User.query.filter_by(email=field.data.lower()).first():
             raise ValidationError('该邮箱已被注册')
 
-    def validate_name(self, field):
-        if User.query.filter_by(name=field.data).first():
+    def validate_username(self, field):
+        if User.query.filter_by(username=field.data).first():
             raise ValidationError('该用户名已被注册')
 
 

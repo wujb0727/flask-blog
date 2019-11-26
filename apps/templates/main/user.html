@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}
+    {{ super() }} | {{ user.username }}
+{% endblock %}
+{% block content %}
+    {{ super() }}
+    <div class="page-header">
+        <div class="container">
+            <div class="col-lg-4 col-lg-offset-1">
+                {% if user.avatar_url %}
+                    <img width="100%" src="{{ user.get_avatar_url() }}" alt="">
+                {% endif %}
+            </div>
+            <div class="col-lg-6 col-lg-offset-1">
+                {% if user.username %}
+                    <h2>{{ user.username }}</h2>
+                {% endif %}
+                {% if user.nickname %}
+                    <p>{{ user.nickname }}</p>
+                {% endif %}
+                {% if user.location %}
+                    <p>{{ user.location }}</p>
+                {% endif %}
+                <p>{{ user.email }}</p>
+                {% if user.about_me %}
+                    <p>{{ user.about_me }}</p>
+                {% endif %}
+                <p>注册时间: {{ moment(user.member_since).format('L') }}</p>
+                <p> 上次访问时间: {{ moment(user.last_seen).fromNow(refresh=True) }}</p>
+                <br>
+                <p>
+                    <a class="btn btn-info" href="{{ url_for('main.edit_profile') }}">修改资料</a>
+                    {% if current_user.is_administrator() %}
+                        <a class="btn btn-danger" href="{{ url_for('main.edit_profile_admin',user_id=user.id) }}">修改资料[Admin]</a>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        <br>
+    </div>
+
+{% endblock %}

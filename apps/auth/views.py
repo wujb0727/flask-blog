@@ -1,6 +1,3 @@
-import os
-import uuid
-
 from flask import render_template, current_app, flash, redirect, url_for, request
 from flask_login import current_user, login_user, login_required, logout_user
 
@@ -10,12 +7,6 @@ from apps.auth.forms import RegisterForm, LoginForm, PasswordChangeForm, EmailCh
     ResetPasswordForm2
 from apps.main.mail import send_mail
 from apps.models import User
-
-
-def random_filename(filename):
-    ext = os.path.splitext(filename)[1]
-    new_filename = uuid.uuid4().hex + ext
-    return new_filename
 
 
 @auth.route('/register/', methods=['GET', 'POST'])
@@ -56,6 +47,7 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data.lower()).first()
         if user is not None and user.verify_password(form.password.data):
+            user.get_last_seen()
             login_user(user, form.remember_me.data)
             next = request.args.get('next')
             if next is None or not next.startswith('/'):

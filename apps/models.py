@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from flask import current_app
+from flask import current_app, url_for
 from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -104,15 +104,18 @@ class User(UserMixin, db.Model):
             self.role = Role.query.filter_by(default=True).first()
 
     def __repr__(self):
-        return '<User {}>'.format(self.name)
+        return '<User {}>'.format(self.username)
 
     def __str__(self):
-        return self.name
+        return self.username
 
     def get_last_seen(self):
-        self.last_seen = datetime.now()
+        self.last_seen = datetime.utcnow()
         db.session.add(self)
         db.session.commit()
+
+    def get_avatar_url(self):
+        return url_for('main.get_file', filename=self.avatar_url)
 
     # 禁止读取密码
     @property
