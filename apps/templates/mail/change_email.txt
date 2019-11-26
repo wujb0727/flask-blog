@@ -1,0 +1,8 @@
+Hello,{{ user.username }}
+为了确认您的邮箱,请点击如下链接:<a href="{{ url_for('auth.confirm_email', token=token,email=email, _external=True) }}">确认邮箱</a>
+或者,您也可以把如下链接粘贴到浏览器地址栏:
+{{ url_for('auth.confirm_email', token=token,email=email, _external=True) }}
+
+爱你的,Flask学习网站管理员
+
+注意:不要回复该邮件

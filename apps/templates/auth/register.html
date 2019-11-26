@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}
+    {{ super() }} | 注册
+{% endblock %}
+{% block content %}
+    {{ super() }}
+
+    <div class="container">
+        <div class="col-lg-4 col-lg-offset-4">
+            <h2>注册</h2>
+            <br>
+            {% import "bootstrap/wtf.html" as wtf %}
+            {{ wtf.quick_form(form) }}
+
+        </div>
+    </div>
+
+{% endblock %}

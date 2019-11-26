@@ -9,6 +9,16 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'kalfa53465gEFDSFfdg5#$&$2hdfd%&#$%#&asf5413(44|)'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+    # 指定保存文件的本地路径
+    UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
+    AVATAR_FOLDER = 'avatars'
+    # os.getcwd() + r'\uploads\avatars'
+    # 指定上传的文件类型
+    ALLOWED_EXTENSIONS = set(['pdf', 'png', 'jpg', 'jpeg', 'gif'])
+    # 指定上传的文件大小（以字节为单位）
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB
+
+    # 邮箱配置
     MAIL_SERVER = 'smtp.163.com'
     MAIL_PORT = 25
     MAIL_USE_TLS = False
