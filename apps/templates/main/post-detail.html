@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}
+    {{ super() }} | 博文详情
+{% endblock %}
+{% block content %}
+    {{ super() }}
+
+    <div class="container">
+        {% include 'includes/posts.html' %}
+    </div>
+
+{% endblock %}
+
+{#{% block scripts %}#}
+{#    {{ super() }}#}
+{#    {{ pagedown.include_pagedown() }}#}
+{#{% endblock %}#}

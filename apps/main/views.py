@@ -127,9 +127,16 @@ def edit_post(id):
         try:
             db.session.add(post)
             db.session.commit()
+            next = request.args.get('next')
+            return redirect(next)
         except:
             db.session.rollback()
             flash('发表失败请重试')
             return redirect(url_for('main.edit_post', id=post.id))
-        return redirect(url_for('main.index'))
     return render_template('main/edit_post.html', form=form)
+
+
+@main.route('/post-detail/<int:id>/', methods=['GET', 'POST'])
+def post_detail(id):
+    pagination = Post.query.filter_by(id=id).paginate(page=1, per_page=10)
+    return render_template('main/post-detail.html', pagination=pagination)

@@ -7,7 +7,8 @@
                     <img class="avatar-small" src="{{ post.author.get_avatar_url() }}" alt="">
                 </a>
             {% else %}
-                <img class="avatar-small" src="{{ url_for('main.get_file',filename='avatars/EpmbR2BxUG7UHBCkvtPP.png') }}" alt="">
+                <img class="avatar-small"
+                     src="{{ url_for('main.get_file',filename='avatars/EpmbR2BxUG7UHBCkvtPP.png') }}" alt="">
             {% endif %}
         </div>
         <div class="post-comments">
@@ -28,10 +29,12 @@
             </div>
         </div>
         <div class="post-footer text-right">
-            <a href="{{ url_for('main.edit_post',id=post.id) }}">
-                <span class="label label-primary">编辑</span>
-            </a>
-            <a href="">
+            {% if current_user.id==post.author_id or current_user.is_administrator() %}
+                <a href="{{ url_for('main.edit_post',id=post.id,next=request.path) }}">
+                    <span class="label label-primary">编辑</span>
+                </a>
+            {% endif %}
+            <a href="{{ url_for('main.post_detail',id=post.id) }}">
                 <span class="label label-info">生成连接</span>
             </a>
             <a href="">
