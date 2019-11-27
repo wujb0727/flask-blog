@@ -1,8 +1,10 @@
 from datetime import datetime
 
+import bleach
 from flask import current_app, url_for
 from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from markdown import markdown
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from apps import db, login_manager
@@ -94,9 +96,11 @@ class User(UserMixin, db.Model):
     nickname = db.Column(db.String(16))
     location = db.Column(db.String(64))
     about_me = db.Column(db.Text)
-    member_since = db.Column(db.DateTime, default=datetime.utcnow())
-    last_seen = db.Column(db.DateTime, default=datetime.utcnow())
+    member_since = db.Column(db.DateTime, default=datetime.utcnow)
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     avatar_url = db.Column(db.String(128))
+
+    posts = db.relationship('Post', backref='author')
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
@@ -109,7 +113,7 @@ class User(UserMixin, db.Model):
     def __str__(self):
         return self.username
 
-    def get_last_seen(self):
+    def set_last_seen(self):
         self.last_seen = datetime.utcnow()
         db.session.add(self)
         db.session.commit()
@@ -167,3 +171,36 @@ class AnonymousUser(AnonymousUserMixin):
 
 # 指定项目使用的匿名用户类
 login_manager.anonymous_user = AnonymousUser
+
+
+class Post(db.Model):
+    __tablename__ = 'posts'
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text)
+    created = db.Column(db.DateTime, default=datetime.utcnow)
+    updated = db.Column(db.DateTime, default=datetime.utcnow)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+
+    body_html = db.Column(db.Text)
+
+    def __repr__(self):
+        return '<Post {}>'.format(self.author.username)
+
+    def __str__(self):
+        return self.authot.username
+
+    def set_updated(self):
+        self.updated = datetime.utcnow()
+        db.session.add(self)
+        db.session.commit()
+
+    @staticmethod
+    def on_change_body(target, value, oldvalue, initiator):
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                        'h1', 'h2', 'h3', 'p']
+        target.body_html = bleach.linkify(
+            bleach.clean(markdown(value, output_format='html'), tags=allowed_tags, strip=True))
+
+
+# db.event.listen()是SQLAlchemy的事件监听函数，在本例中监听的是'set'事件，也即指定字 段的内容发生改变的情况
+db.event.listen(Post.body, 'set', Post.on_change_body)

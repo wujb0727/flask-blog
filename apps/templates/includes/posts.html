@@ -1,0 +1,43 @@
+<div class="posts">
+    {% for post in pagination.items %}
+        <hr>
+        <div class="post-avatar">
+            {% if post.author.avatar_url %}
+                <a href="{{ url_for('main.user',id=post.author.id) }}">
+                    <img class="avatar-small" src="{{ post.author.get_avatar_url() }}" alt="">
+                </a>
+            {% else %}
+                <img class="avatar-small" src="{{ url_for('main.get_file',filename='avatars/EpmbR2BxUG7UHBCkvtPP.png') }}" alt="">
+            {% endif %}
+        </div>
+        <div class="post-comments">
+            <div>
+                <a class="text-left" href="{{ url_for('main.user',id=post.author.id) }}">
+                    <span>{{ post.author.username }}</span>
+                </a>
+                <div class="text-right">
+                    <span>{{ moment(post.created).fromNow(refresh=True) }}</span>
+                </div>
+            </div>
+            <div>
+                {% if post.body_html %}
+                    {{ post.body_html | safe }}
+                {% else %}
+                    {{ post.body }}
+                {% endif %}
+            </div>
+        </div>
+        <div class="post-footer text-right">
+            <a href="{{ url_for('main.edit_post',id=post.id) }}">
+                <span class="label label-primary">编辑</span>
+            </a>
+            <a href="">
+                <span class="label label-info">生成连接</span>
+            </a>
+            <a href="">
+                <span class="label label-success">0 评论</span>
+            </a>
+        </div>
+    {% endfor %}
+
+</div>

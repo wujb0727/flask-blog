@@ -5,6 +5,11 @@
     Flask学习
 {% endblock %}</title>
 
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
 {% block navbar %}
     <nav class="navbar navbar-default navbar-static-top">
         <div class="container">
@@ -31,7 +36,7 @@
                 <ul class="nav navbar-nav navbar-right">
                     {% if current_user.is_authenticated %}
                         <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
+                            <a class="dropdown-toggle" data-toggle="dropdown" role="button"
                                aria-haspopup="true"
                                aria-expanded="false">{{ current_user.username }}<span class="caret"></span></a>
                             <ul class="dropdown-menu">

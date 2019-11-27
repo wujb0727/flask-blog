@@ -38,5 +38,53 @@
         </div>
         <br>
     </div>
+    <div class="container">
+        <div class="post-body">
+            <ul class="nav nav-tabs">
+                <li role="presentation" class="active"><a href="#">全部文章</a></li>
+                <li role="presentation"><a href="#">关注文章</a></li>
+            </ul>
+            <br>
+            {% include 'includes/posts.html' %}
 
+        </div>
+
+        <div class="pagination-lg">
+            <nav aria-label="Page navigation" class="text-center">
+                <ul class="pagination">
+                    <li>
+                        <a href="{% if pagination.has_prev %}
+                                {{ url_for('main.user',id=user.id,page=pagination.prev_num) }}
+                        {% endif %}" aria-label="Previous">
+                            <span aria-hidden="true">上一页</span>
+                        </a>
+                    </li>
+                    {% for iter_page in pagination.iter_pages() %}
+                        {% if iter_page %}
+                            {% if iter_page==pagination.page %}
+                                <li class="active">
+                                    <a href="{{ url_for('main.user',id=user.id,page=iter_page) }}">{{ iter_page }}</a>
+                                </li>
+                            {% else %}
+                                <li>
+                                    <a href="{{ url_for('main.user',id=user.id,page=iter_page) }}">{{ iter_page }}</a>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="disabled">
+                                <a href="#">&hellip;</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    <li>
+                        <a href="{% if pagination.has_next %}
+                            {{ url_for('main.user',id=user.id,page=pagination.next_num) }}
+                        {% endif %}" aria-label="Next">
+                            <span aria-hidden="true">下一页</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
 {% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}
+    {{ super() }} | 编辑博文
+{% endblock %}
+{% block content %}
+    {{ super() }}
+
+    <div class="container">
+        <div class="col-lg-8 col-lg-offset-2">
+            <h2>编辑博文</h2>
+            <br>
+            {% import "bootstrap/wtf.html" as wtf %}
+            {{ wtf.quick_form(form) }}
+
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    {{ super() }}
+    {{ pagedown.include_pagedown() }}
+{% endblock %}

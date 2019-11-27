@@ -1,3 +1,4 @@
+from flask_pagedown.fields import PageDownField
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed
 from wtforms import StringField, TextAreaField, FileField, SubmitField, BooleanField, SelectField
@@ -25,14 +26,19 @@ class EditProfileAdminForm(FlaskForm):
     avatar = FileField('头像', validators=[FileAllowed(['jpg', 'jpeg', 'png', 'gif'], message="只允许传指定的文件！")])
     submit = SubmitField('提交')
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.role_id.choices = [(role.id, role.name) for role in Role.query.all()]
+
     def validate_email(self, field):
         if User.query.filter_by(email=field.data.lower()).first() and self.email.data != field.data:
             raise ValidationError('该邮箱已被注册')
 
     def validate_username(self, field):
-        if User.query.filter_by(username=field.data).first()and self.username.data != field.data:
+        if User.query.filter_by(username=field.data).first() and self.username.data != field.data:
             raise ValidationError('该用户名已被注册')
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.role_id.choices = [(role.id, role.name) for role in Role.query.all()]
+
+class PostForm(FlaskForm):
+    body = PageDownField("现在的想法:", validators=[DataRequired()])
+    submit = SubmitField("发表")

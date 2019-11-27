@@ -1,25 +1,47 @@
 import os
 import uuid
 
-from flask import send_from_directory, current_app, render_template, flash, redirect, url_for
+from flask import send_from_directory, current_app, render_template, flash, redirect, url_for, request
 from flask_login import login_required, current_user
 
 from apps import db
 from apps.decorators import admin_required
 from apps.main import main
-from apps.main.forms import EditProfileForm, EditProfileAdminForm
-from apps.models import User
+from apps.main.forms import EditProfileForm, EditProfileAdminForm, PostForm
+from apps.models import User, Post
 
 
 def random_filename(filename):
+    """
+    生成随机字符串组成的文件名
+    :param filename: 原文件名
+    :return: 随机字符串组成的文件名
+    """
     ext = os.path.splitext(filename)[1]
     new_filename = uuid.uuid4().hex + ext
     return new_filename
 
 
-@main.route('/')
+@main.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('main/index.html')
+    page = request.args.get('page', 1, type=int)
+    pagination = Post.query.order_by(Post.created.desc()).paginate(page, per_page=10)
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(body=form.body.data, author_id=current_user.id)
+        post.set_updated()
+        try:
+            db.session.add(post)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            flash('发表失败请重试')
+        return redirect(url_for('main.index'))
+    context = {
+        'pagination': pagination,
+        'form': form,
+    }
+    return render_template('main/index.html', **context)
 
 
 @main.route('/uploads/<path:filename>/')
@@ -30,7 +52,13 @@ def get_file(filename):
 @main.route('/user/<int:id>/')
 def user(id):
     user = User.query.filter_by(id=id).first_or_404()
-    return render_template('main/user.html', user=user)
+    page = request.args.get('page', 1, type=int)
+    pagination = Post.query.filter_by(author=user).order_by(Post.created.desc()).paginate(page, per_page=10)
+    context = {
+        'user': user,
+        'pagination': pagination,
+    }
+    return render_template('main/user.html', **context)
 
 
 @main.route('/edit-profile/', methods=['GET', 'POST'])
@@ -85,3 +113,23 @@ def edit_profile_admin(user_id):
             return redirect(url_for('main.edit_profile', user_id=user.id))
         return redirect(url_for('main.user', id=user.id))
     return render_template('main/edit-profile-admin.html', form=form)
+
+
+@main.route('/edit-post/<int:id>/', methods=['GET', 'POST'])
+@login_required
+def edit_post(id):
+    post = Post.query.filter_by(id=id).first()
+    form = PostForm(obj=post)
+    if form.validate_on_submit():
+        post.body = form.body.data
+        post.author_id = current_user.id
+        post.set_updated()
+        try:
+            db.session.add(post)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            flash('发表失败请重试')
+            return redirect(url_for('main.edit_post', id=post.id))
+        return redirect(url_for('main.index'))
+    return render_template('main/edit_post.html', form=form)

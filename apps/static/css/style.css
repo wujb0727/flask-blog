@@ -1,0 +1,26 @@
+.posts {
+}
+
+.post-avatar {
+    padding: 10px;
+}
+
+.avatar-small {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+}
+
+.post-comments {
+    margin-left: 100px;
+    margin-top: -60px;
+}
+
+.post-comments a {
+    font-size: 18px;
+    text-decoration: none;
+}
+
+.post-footer a {
+    text-decoration: none;
+}
