@@ -1,0 +1,74 @@
+<div class="posts">
+    {% for comment in comment_list %}
+        <hr>
+        <div class="post-avatar">
+            {% if comment.user.avatar_url %}
+                <a href="{{ url_for('main.user',id=comment.user.id) }}">
+                    <img class="avatar-small" src="{{ comment.user.get_avatar_url() }}" alt="">
+                </a>
+            {% else %}
+                <img class="avatar-small"
+                     src="{{ comment.user.get_avatar_url() }}" alt="">
+            {% endif %}
+        </div>
+        <div class="post-comments">
+            <div>
+                <a class="text-left" href="{{ url_for('main.user',id=comment.user.id) }}">
+                    <span>{{ comment.user.username }}</span>
+                </a>
+                <div class="text-right">
+                    <span>{{ moment(comment.timestamp).fromNow(refresh=True) }}</span>
+                </div>
+            </div>
+            <div>
+                {% if comment.is_ban %}
+                    <b>该条评论已被管理员禁止显示</b>
+                    {% if current_user.is_authenticated and current_user.can(Permission.MODERATE) %}
+                        {% if comment.body_html %}
+                            {{ comment.body_html | safe }}
+                        {% else %}
+                            {{ comment.body }}
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    {% if comment.body_html %}
+                        {{ comment.body_html | safe }}
+                    {% else %}
+                        {{ comment.body }}
+                    {% endif %}
+                {% endif %}
+
+            </div>
+            <br>
+            {% if current_user.is_authenticated and current_user.can(Permission.MODERATE) %}
+                <div>
+                    {% if comment.is_ban %}
+                        <a class="btn btn-info" style="font-size: 14px;"
+                           href="{{ url_for('main.comment_hidden_or_show',id=comment.id,action='show') }}">恢复评论</a>
+                    {% else %}
+                        <a class="btn btn-danger" style="font-size: 14px;"
+                           href="{{ url_for('main.comment_hidden_or_show',id=comment.id,action='hidden') }}">禁止显示</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+        </div>
+
+
+
+        {#        <div class="post-footer text-right">#}
+        {#            {% if current_user.id==comment.author_id or current_user.is_administrator() %}#}
+        {#                <a href="{{ url_for('main.edit_post',id=comment.id,next=request.path) }}">#}
+        {#                    <span class="label label-primary">编辑</span>#}
+        {#                </a>#}
+        {#            {% endif %}#}
+        {#            <a href="{{ url_for('main.post_detail',id=comment.id) }}">#}
+        {#                <span class="label label-info">生成连接</span>#}
+        {#            </a>#}
+        {#            <a href="">#}
+        {#                <span class="label label-success">0 评论</span>#}
+        {#            </a>#}
+        {#        </div>#}
+    {% endfor %}
+
+</div>

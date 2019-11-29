@@ -119,6 +119,8 @@ class User(UserMixin, db.Model):
                                  backref=db.backref('blogger', lazy='joined'), lazy='dynamic',
                                  cascade='all, delete-orphan')
 
+    comments = db.relationship('Comment', backref='user')
+
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
         if self.role is None:
@@ -229,15 +231,17 @@ class Post(db.Model):
     body = db.Column(db.Text)
     created = db.Column(db.DateTime, default=datetime.utcnow)
     updated = db.Column(db.DateTime, default=datetime.utcnow)
-    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     body_html = db.Column(db.Text)
+
+    comments = db.relationship('Comment', backref='post')
 
     def __repr__(self):
         return '<Post {}>'.format(self.author.username)
 
     def __str__(self):
-        return self.authot.username
+        return self.author.username
 
     def set_updated(self):
         self.updated = datetime.utcnow()
@@ -252,5 +256,46 @@ class Post(db.Model):
             bleach.clean(markdown(value, output_format='html'), tags=allowed_tags, strip=True))
 
 
-# db.event.listen()是SQLAlchemy的事件监听函数，在本例中监听的是'set'事件，也即指定字 段的内容发生改变的情况
+# db.event.listen()是SQLAlchemy的事件监听函数，在本例中监听的是'set'事件，也即指定字段的内容发生改变的情况
 db.event.listen(Post.body, 'set', Post.on_change_body)
+
+
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    body = db.Column(db.Text)
+    body_html = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    is_ban = db.Column(db.Boolean, default=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'))
+
+    def __repr__(self):
+        return '<Comment {}>'.format(self.user.username)
+
+    def __str__(self):
+        return self.user.username
+
+    def hidden_comment(self):
+        if not self.is_ban:
+            self.is_ban = True
+            db.session.add(self)
+            return True
+        return False
+
+    def show_comment(self):
+        if self.is_ban:
+            self.is_ban = False
+            db.session.add(self)
+            return True
+        return False
+
+    @staticmethod
+    def on_change_body(target, value, oldvalue, initiator):
+        allowed_tags = ['a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol', 'pre', 'strong', 'ul',
+                        'h1', 'h2', 'h3', 'p']
+        target.body_html = bleach.linkify(
+            bleach.clean(markdown(value, output_format='html'), tags=allowed_tags, strip=True))
+
+
+# db.event.listen()是SQLAlchemy的事件监听函数，在本例中监听的是'set'事件，也即指定字段的内容发生改变的情况
+db.event.listen(Comment.body, 'set', Comment.on_change_body)

@@ -5,10 +5,10 @@ from flask import send_from_directory, current_app, render_template, flash, redi
 from flask_login import login_required, current_user
 
 from apps import db
-from apps.decorators import admin_required
+from apps.decorators import admin_required, permission_required
 from apps.main import main
-from apps.main.forms import EditProfileForm, EditProfileAdminForm, PostForm
-from apps.models import User, Post, Follow
+from apps.main.forms import EditProfileForm, EditProfileAdminForm, PostForm, CommentForm
+from apps.models import User, Post, Follow, Comment, Permission
 
 
 def random_filename(filename):
@@ -22,6 +22,7 @@ def random_filename(filename):
     return new_filename
 
 
+# 首页
 @main.route('/', methods=['GET', 'POST'])
 def index():
     page = request.args.get('page', 1, type=int)
@@ -66,17 +67,19 @@ def show_followed():
     return resp
 
 
+# 获取服务器文件
 @main.route('/uploads/<path:filename>/')
 def get_file(filename):
     return send_from_directory(os.path.join(current_app.config['UPLOAD_FOLDER']), filename)
 
 
+# 用户详情
 @main.route('/user/<int:id>/')
 def user(id):
     user = User.query.filter_by(id=id).first_or_404()
     page = request.args.get('page', 1, type=int)
     if request.cookies.get('show_followed') == 'show_followed' and current_user.is_authenticated:
-        query = current_user.followed_posts
+        query = user.followed_posts
     else:
         query = Post.query.filter_by(author=user)
     pagination = query.order_by(Post.created.desc()).paginate(page, per_page=10)
@@ -87,6 +90,7 @@ def user(id):
     return render_template('main/user.html', **context)
 
 
+# 编辑用户资料
 @main.route('/edit-profile/', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
@@ -112,6 +116,7 @@ def edit_profile():
     return render_template('main/edit-profile.html', form=form)
 
 
+# 管理员编辑用户资料
 @main.route('/edit-profile/<int:user_id>/', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -141,6 +146,7 @@ def edit_profile_admin(user_id):
     return render_template('main/edit-profile-admin.html', form=form)
 
 
+# 编辑博文
 @main.route('/edit-post/<int:id>/', methods=['GET', 'POST'])
 @login_required
 def edit_post(id):
@@ -162,12 +168,34 @@ def edit_post(id):
     return render_template('main/edit_post.html', form=form)
 
 
+# 博文详情(评论)
 @main.route('/post-detail/<int:id>/', methods=['GET', 'POST'])
 def post_detail(id):
+    user = current_user._get_current_object()
     pagination = Post.query.filter_by(id=id).paginate(page=1, per_page=10)
-    return render_template('main/post-detail.html', pagination=pagination)
+    post = Post.query.filter_by(id=id).first()
+    comment_list = Comment.query.filter_by(post=post).order_by(Comment.timestamp.desc()).all()
+    form = CommentForm()
+    if form.validate_on_submit():
+        comment = Comment(body=form.body.data, user=user, post=post)
+        try:
+            db.session.add(comment)
+            db.session.commit()
+        except:
+            db.session.rollback()
+            flash('评论失败,请重试')
+            return redirect(url_for('main.post_detail', id=post.id))
+        flash('评论成功')
+        return redirect(url_for('main.post_detail', id=post.id))
+    context = {
+        'pagination': pagination,
+        'form': form,
+        'comment_list': comment_list,
+    }
+    return render_template('main/post-detail.html', **context)
 
 
+# 关注用户
 @main.route('/follow/<int:id>/')
 @login_required
 def follow(id):
@@ -178,6 +206,7 @@ def follow(id):
     return redirect(url_for('main.user', id=blogger.id))
 
 
+# 取消关注
 @main.route('/unfollow/<int:id>/')
 @login_required
 def unfollow(id):
@@ -188,6 +217,7 @@ def unfollow(id):
     return redirect(url_for('main.user', id=blogger.id))
 
 
+# 粉丝列表
 @main.route('/fans-list/<int:id>/')
 def fans_list(id):
     user = User.query.filter_by(id=id).first()
@@ -200,6 +230,7 @@ def fans_list(id):
     return render_template('main/fans-list.html', **context)
 
 
+# 关注列表
 @main.route('/follow-list/<int:id>/')
 def follow_list(id):
     user = User.query.filter_by(id=id).first()
@@ -210,3 +241,19 @@ def follow_list(id):
         'pagination': pagination
     }
     return render_template('main/follow-list.html', **context)
+
+
+@main.route('/comment-hidden-or-show/<int:id>/')
+@permission_required(Permission.MODERATE)
+def comment_hidden_or_show(id):
+    comment = Comment.query.filter_by(id=id).first()
+    action = request.args.get('action')
+    if action == 'hidden':
+        comment.hidden_comment()
+        db.session.commit()
+        flash('您已禁止显示该条评论')
+    elif action == 'show':
+        comment.show_comment()
+        db.session.commit()
+        flash('您已恢复显示该条评论')
+    return redirect(url_for('main.post_detail', id=comment.post_id))

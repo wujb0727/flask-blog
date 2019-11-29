@@ -7,11 +7,26 @@
 
     <div class="container">
         {% include 'includes/posts.html' %}
+
+        {% if current_user.can(Permission.WRITE) %}
+            <div class="form-group">
+                {% import "bootstrap/wtf.html" as wtf %}
+                {{ wtf.quick_form(form) }}
+            </div>
+        {% endif %}
+
+        {% include 'includes/comments.html' %}
+
+        <br>
+        <br>
+        <br>
     </div>
+
+
 
 {% endblock %}
 
-{#{% block scripts %}#}
-{#    {{ super() }}#}
-{#    {{ pagedown.include_pagedown() }}#}
-{#{% endblock %}#}
+{% block scripts %}
+    {{ super() }}
+    {{ pagedown.include_pagedown() }}
+{% endblock %}

@@ -1,16 +1,3 @@
-<ul class="nav nav-tabs">
-    <li role="presentation" {% if request.cookies.get('show_followed')=='show_all' %} class="active" {% endif %} >
-        <a href="{{ url_for('main.show_all',next=request.path) }}">全部文章</a>
-    </li>
-    {% if current_user.is_authenticated %}
-        <li role="presentation" {% if request.cookies.get('show_followed')=='show_followed' %}
-            class="active" {% endif %} >
-            <a href="{{ url_for('main.show_followed',next=request.path) }}">关注文章</a>
-        </li>
-    {% endif %}
-</ul>
-<br>
-
 <div class="posts">
     {% for post in pagination.items %}
         <hr>
@@ -50,8 +37,8 @@
             <a href="{{ url_for('main.post_detail',id=post.id) }}">
                 <span class="label label-info">生成连接</span>
             </a>
-            <a href="">
-                <span class="label label-success">0 评论</span>
+            <a href="{{ url_for('main.post_detail',id=post.id) }}">
+                <span class="label label-success">{{ post.comments.__len__() }} 评论</span>
             </a>
         </div>
     {% endfor %}

@@ -22,6 +22,19 @@
         {% endif %}
 
         <div class="post-body">
+            <ul class="nav nav-tabs">
+                <li role="presentation" {% if request.cookies.get('show_followed')=='show_all' %}
+                    class="active" {% endif %} >
+                    <a href="{{ url_for('main.show_all',next=request.path) }}">全部文章</a>
+                </li>
+                {% if current_user.is_authenticated %}
+                    <li role="presentation" {% if request.cookies.get('show_followed')=='show_followed' %}
+                        class="active" {% endif %} >
+                        <a href="{{ url_for('main.show_followed',next=request.path) }}">关注文章</a>
+                    </li>
+                {% endif %}
+            </ul>
+            <br>
 
             {% include 'includes/posts.html' %}
 

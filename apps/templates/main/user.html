@@ -6,12 +6,12 @@
     {{ super() }}
     <div class="page-header">
         <div class="container">
-            <div class="col-lg-4 col-lg-offset-1">
+            <div class="col-lg-4 col-lg-offset-1 col-sm-4 col-sm-offset-1">
                 {% if user.avatar_url %}
-                    <img style="border-radius: 10%;" width="100%" src="{{ user.get_avatar_url() }}" alt="">
+                    <img style="border-radius: 10%;" width="80%" src="{{ user.get_avatar_url() }}" alt="">
                 {% endif %}
             </div>
-            <div class="col-lg-6 col-lg-offset-1">
+            <div class="col-lg-6 col-lg-offset-1 col-sm-6 col-sm-offset-1">
                 {% if user.username %}
                     <h2>{{ user.username }}</h2>
                 {% endif %}
@@ -64,6 +64,20 @@
     </div>
     <div class="container">
         <div class="post-body">
+            <ul class="nav nav-tabs">
+                <li role="presentation" {% if request.cookies.get('show_followed')=='show_all' %}
+                    class="active" {% endif %} >
+                    <a href="{{ url_for('main.show_all',next=request.path) }}">全部文章</a>
+                </li>
+                {% if current_user.is_authenticated %}
+                    <li role="presentation" {% if request.cookies.get('show_followed')=='show_followed' %}
+                        class="active" {% endif %} >
+                        <a href="{{ url_for('main.show_followed',next=request.path) }}">关注文章</a>
+                    </li>
+                {% endif %}
+            </ul>
+            <br>
+
             {% include 'includes/posts.html' %}
 
         </div>
