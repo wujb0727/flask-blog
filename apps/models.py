@@ -23,6 +23,17 @@ class Permission:
     ADMIN = 16
 
 
+class Follow(db.Model):
+    __tablename = 'follows'
+    id = db.Column(db.Integer, primary_key=True)
+    fans_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    blogger_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return '<Follow  {} follow {}>'.format(self.fans.username, self.blogger.username)
+
+
 class Role(db.Model):
     __tablename__ = 'roles'
     id = db.Column(db.Integer, primary_key=True)
@@ -102,6 +113,12 @@ class User(UserMixin, db.Model):
 
     posts = db.relationship('Post', backref='author')
 
+    is_fans = db.relationship('Follow', foreign_keys=[Follow.fans_id], backref=db.backref('fans', lazy='joined'),
+                              lazy='dynamic', cascade='all, delete-orphan')
+    is_blogger = db.relationship('Follow', foreign_keys=[Follow.blogger_id],
+                                 backref=db.backref('blogger', lazy='joined'), lazy='dynamic',
+                                 cascade='all, delete-orphan')
+
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
         if self.role is None:
@@ -158,6 +175,39 @@ class User(UserMixin, db.Model):
     # 用来判断某个用户是否有管理员权限
     def is_administrator(self):
         return self.can(Permission.ADMIN)
+
+    # 关注用户
+    def follow(self, user):
+        if not self.is_following(user):
+            f = Follow(fans=self, blogger=user)
+            try:
+                db.session.add(f)
+                db.session.commit()
+            except:
+                db.session.rollback()
+
+    # 取消关注
+    def unfollow(self, user):
+        if self.is_following(user):
+            f = Follow.query.filter_by(fans=self, blogger=user).first()
+            try:
+                db.session.delete(f)
+                db.session.commit()
+            except:
+                db.session.rollback()
+
+    # 判断是否关注了某个用户
+    def is_following(self, user):
+        return Follow.query.filter_by(fans=self, blogger=user).count() > 0
+
+    # 判断是否被某个用户关注
+    def is_followed_by(self, user):
+        return Follow.query.filter_by(fans=user, blogger=self).count() > 0
+
+    # 获取关注用户的文章
+    @property
+    def followed_posts(self):
+        return Post.query.join(Follow, Follow.blogger_id == Post.author_id).filter(Follow.fans_id == self.id)
 
 
 # 创建一个匿名用户类，从而实现相应的权限 flask-login

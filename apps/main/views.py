@@ -1,14 +1,14 @@
 import os
 import uuid
 
-from flask import send_from_directory, current_app, render_template, flash, redirect, url_for, request
+from flask import send_from_directory, current_app, render_template, flash, redirect, url_for, request, make_response
 from flask_login import login_required, current_user
 
 from apps import db
 from apps.decorators import admin_required
 from apps.main import main
 from apps.main.forms import EditProfileForm, EditProfileAdminForm, PostForm
-from apps.models import User, Post
+from apps.models import User, Post, Follow
 
 
 def random_filename(filename):
@@ -25,7 +25,11 @@ def random_filename(filename):
 @main.route('/', methods=['GET', 'POST'])
 def index():
     page = request.args.get('page', 1, type=int)
-    pagination = Post.query.order_by(Post.created.desc()).paginate(page, per_page=10)
+    if request.cookies.get('show_followed') == 'show_followed' and current_user.is_authenticated:
+        query = current_user.followed_posts
+    else:
+        query = Post.query
+    pagination = query.order_by(Post.created.desc()).paginate(page, per_page=10)
     form = PostForm()
     if form.validate_on_submit():
         post = Post(body=form.body.data, author_id=current_user.id)
@@ -44,6 +48,24 @@ def index():
     return render_template('main/index.html', **context)
 
 
+@main.route('/all/')
+@login_required
+def show_all():
+    next = request.args.get('next')
+    resp = make_response(redirect(next))
+    resp.set_cookie('show_followed', 'show_all', max_age=30 * 24 * 60 * 60)
+    return resp
+
+
+@main.route('/show_followed/')
+@login_required
+def show_followed():
+    next = request.args.get('next')
+    resp = make_response(redirect(next))
+    resp.set_cookie('show_followed', 'show_followed', max_age=30 * 24 * 60 * 60)
+    return resp
+
+
 @main.route('/uploads/<path:filename>/')
 def get_file(filename):
     return send_from_directory(os.path.join(current_app.config['UPLOAD_FOLDER']), filename)
@@ -53,7 +75,11 @@ def get_file(filename):
 def user(id):
     user = User.query.filter_by(id=id).first_or_404()
     page = request.args.get('page', 1, type=int)
-    pagination = Post.query.filter_by(author=user).order_by(Post.created.desc()).paginate(page, per_page=10)
+    if request.cookies.get('show_followed') == 'show_followed' and current_user.is_authenticated:
+        query = current_user.followed_posts
+    else:
+        query = Post.query.filter_by(author=user)
+    pagination = query.order_by(Post.created.desc()).paginate(page, per_page=10)
     context = {
         'user': user,
         'pagination': pagination,
@@ -140,3 +166,47 @@ def edit_post(id):
 def post_detail(id):
     pagination = Post.query.filter_by(id=id).paginate(page=1, per_page=10)
     return render_template('main/post-detail.html', pagination=pagination)
+
+
+@main.route('/follow/<int:id>/')
+@login_required
+def follow(id):
+    fans = current_user._get_current_object()
+    blogger = User.query.filter_by(id=id).first()
+    fans.follow(blogger)
+    flash('您已成功关注{}'.format(blogger.username))
+    return redirect(url_for('main.user', id=blogger.id))
+
+
+@main.route('/unfollow/<int:id>/')
+@login_required
+def unfollow(id):
+    fans = current_user._get_current_object()
+    blogger = User.query.filter_by(id=id).first()
+    fans.unfollow(blogger)
+    flash('您已取消关注{}'.format(blogger.username))
+    return redirect(url_for('main.user', id=blogger.id))
+
+
+@main.route('/fans-list/<int:id>/')
+def fans_list(id):
+    user = User.query.filter_by(id=id).first()
+    page = request.args.get('page', 1, type=int)
+    pagination = user.is_blogger.order_by(Follow.timestamp.desc()).paginate(page, per_page=10)
+    context = {
+        'user': user,
+        'pagination': pagination
+    }
+    return render_template('main/fans-list.html', **context)
+
+
+@main.route('/follow-list/<int:id>/')
+def follow_list(id):
+    user = User.query.filter_by(id=id).first()
+    page = request.args.get('page', 1, type=int)
+    pagination = user.is_fans.order_by(Follow.timestamp.desc()).paginate(page, per_page=10)
+    context = {
+        'user': user,
+        'pagination': pagination
+    }
+    return render_template('main/follow-list.html', **context)

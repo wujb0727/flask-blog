@@ -8,7 +8,7 @@
         <div class="container">
             <div class="col-lg-4 col-lg-offset-1">
                 {% if user.avatar_url %}
-                    <img width="100%" src="{{ user.get_avatar_url() }}" alt="">
+                    <img style="border-radius: 10%;" width="100%" src="{{ user.get_avatar_url() }}" alt="">
                 {% endif %}
             </div>
             <div class="col-lg-6 col-lg-offset-1">
@@ -28,10 +28,34 @@
                 <p>注册时间: {{ moment(user.member_since).format('L') }}</p>
                 <p> 上次访问时间: {{ moment(user.last_seen).fromNow(refresh=True) }}</p>
                 <br>
+                <p>{{ user.posts.__len__() }} 条博文</p>
                 <p>
-                    <a class="btn btn-info" href="{{ url_for('main.edit_profile') }}">修改资料</a>
-                    {% if current_user.is_administrator() %}
-                        <a class="btn btn-danger" href="{{ url_for('main.edit_profile_admin',user_id=user.id) }}">修改资料[Admin]</a>
+                    <a href="{{ url_for('main.fans_list',id=user.id) }}">粉丝数 <span
+                            class="badge">{{ user.is_blogger.count() }}</span></a>&nbsp;
+                    <a href="{{ url_for('main.follow_list',id=user.id) }}">关注数 <span
+                            class="badge">{{ user.is_fans.count() }}</span></a>
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.is_followed_by(user) %}
+                            &nbsp;|&nbsp;<a href="" class="label label-default">Ta关注了你</a>
+                        {% endif %}
+                    {% endif %}
+                </p>
+                <p>
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.id==user.id %}
+                            <a class="btn btn-info" href="{{ url_for('main.edit_profile') }}">修改资料</a>
+                        {% else %}
+                            {% if current_user.is_following(user) %}
+                                <a class="btn btn-danger" href="{{ url_for('main.unfollow',id=user.id) }}">取消关注</a>
+                            {% else %}
+                                <a class="btn btn-info" href="{{ url_for('main.follow',id=user.id) }}">关注</a>
+                            {% endif %}
+
+                        {% endif %}
+
+                        {% if current_user.is_administrator() %}
+                            <a class="btn btn-danger" href="{{ url_for('main.edit_profile_admin',user_id=user.id) }}">修改资料[Admin]</a>
+                        {% endif %}
                     {% endif %}
                 </p>
             </div>
@@ -40,11 +64,6 @@
     </div>
     <div class="container">
         <div class="post-body">
-            <ul class="nav nav-tabs">
-                <li role="presentation" class="active"><a href="#">全部文章</a></li>
-                <li role="presentation"><a href="#">关注文章</a></li>
-            </ul>
-            <br>
             {% include 'includes/posts.html' %}
 
         </div>

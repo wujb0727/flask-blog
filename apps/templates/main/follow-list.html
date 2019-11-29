@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}
+    {{ super() }} | 关注列表
+{% endblock %}
+{% block content %}
+    {{ super() }}
+
+    <div class="container">
+        <h1>{{ user.username }} 的关注列表</h1>
+        <br>
+
+        <table class="table">
+            <tr style="height: 50px;line-height: 50px;">
+                <th>用户</th>
+                <th>关注时间</th>
+            </tr>
+            {% for item in pagination.items %}
+                <tr>
+                    <td>
+                        <a style="text-decoration: none;" href="{{ url_for('main.user',id=item.blogger.id) }}">
+                            <img style="width: 50px;height: 50px; border-radius: 8px;"
+                                 src="{{ item.blogger.get_avatar_url() }}" alt="">
+                            &nbsp;{{ item.blogger.username }}
+                        </a>
+                    </td>
+                    <td style="line-height: 50px">{{ moment(item.timestamp).format('L') }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <nav aria-label="Page navigation" class="text-right">
+            <ul class="pagination">
+                <li>
+                    <a href="{% if pagination.has_prev %}
+                                {{ url_for('main.follow_list',id=user.id,page=pagination.prev_num) }}
+                        {% endif %}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% for iter_page in pagination.iter_pages() %}
+                    {% if iter_page %}
+                        {% if iter_page==pagination.page %}
+                            <li class="active">
+                                <a href="{{ url_for('main.follow_list',id=user.id,page=iter_page) }}">{{ iter_page }}</a>
+                            </li>
+                        {% else %}
+                            <li>
+                                <a href="{{ url_for('main.follow_list',id=user.id,page=iter_page) }}">{{ iter_page }}</a>
+                            </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="disabled">
+                            <a href="#">&hellip;</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                <li>
+                    <a href="{% if pagination.has_next %}
+                            {{ url_for('main.follow_list',id=user.id,page=pagination.next_num) }}
+                        {% endif %}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+{% endblock %}

@@ -1,3 +1,16 @@
+<ul class="nav nav-tabs">
+    <li role="presentation" {% if request.cookies.get('show_followed')=='show_all' %} class="active" {% endif %} >
+        <a href="{{ url_for('main.show_all',next=request.path) }}">全部文章</a>
+    </li>
+    {% if current_user.is_authenticated %}
+        <li role="presentation" {% if request.cookies.get('show_followed')=='show_followed' %}
+            class="active" {% endif %} >
+            <a href="{{ url_for('main.show_followed',next=request.path) }}">关注文章</a>
+        </li>
+    {% endif %}
+</ul>
+<br>
+
 <div class="posts">
     {% for post in pagination.items %}
         <hr>
@@ -8,7 +21,7 @@
                 </a>
             {% else %}
                 <img class="avatar-small"
-                     src="{{ url_for('main.get_file',filename='avatars/EpmbR2BxUG7UHBCkvtPP.png') }}" alt="">
+                     src="{{ post.author.get_avatar_url() }}" alt="">
             {% endif %}
         </div>
         <div class="post-comments">
