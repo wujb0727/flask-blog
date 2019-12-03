@@ -1,4 +1,6 @@
 from random import randint
+
+from flask import current_app
 from sqlalchemy.exc import IntegrityError
 from faker import Faker
 from . import db
@@ -16,7 +18,8 @@ def users(count=100):
                  nickname=fake.name(),
                  location=fake.city(),
                  about_me=fake.text(),
-                 member_since=fake.past_date())
+                 member_since=fake.past_date(),
+                 avatar_url=current_app.config['AVATAR_FOLDER'] + '/default.png')
         db.session.add(u)
         try:
             db.session.commit()
