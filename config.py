@@ -27,6 +27,9 @@ class Config:
     FLASKY_MAIL_SUBJECT_PREFIX = '[Flasky]'  # 邮件主题前缀
     FLASKY_MAIL_SENDER = 'Flasky Admin <15807277340@163.com>'
 
+    # 分页时每页多少条数据
+    FLASKY_POSTS_PER_PAGE = 10
+
 
 # 开发环境配置
 class DevelopmentConfig(Config):

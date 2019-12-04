@@ -82,7 +82,9 @@ def user(id):
         query = user.followed_posts
     else:
         query = Post.query.filter_by(author=user)
-    pagination = query.order_by(Post.created.desc()).paginate(page, per_page=10)
+    pagination = query.order_by(Post.created.desc()).paginate(page,
+                                                              per_page=current_app.config['FLASKY_POSTS_PER_PAGE'],
+                                                              error_out=False)
     context = {
         'user': user,
         'pagination': pagination,

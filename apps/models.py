@@ -6,6 +6,7 @@ from flask_login import UserMixin, AnonymousUserMixin
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
 from markdown import markdown
 from werkzeug.security import check_password_hash, generate_password_hash
+from wtforms import ValidationError
 
 from apps import db, login_manager
 
@@ -32,6 +33,16 @@ class Follow(db.Model):
 
     def __repr__(self):
         return '<Follow  {} follow {}>'.format(self.fans.username, self.blogger.username)
+
+    def to_json(self):
+        json_follow = {
+            'fans': self.fans.username,
+            'fans_url': url_for('api.get_user', id=self.fans_id),
+            'blogger': self.blogger.username,
+            'blogger_url': url_for('api.get_user', id=self.blogger_id),
+            'timestamp': self.timestamp
+        }
+        return json_follow
 
 
 class Role(db.Model):
@@ -211,6 +222,37 @@ class User(UserMixin, db.Model):
     def followed_posts(self):
         return Post.query.join(Follow, Follow.blogger_id == Post.author_id).filter(Follow.fans_id == self.id)
 
+    # 生成一个token令牌
+    def generate_auth_token(self, expiration):
+        s = Serializer(current_app.config['SECRET_KEY'], expires_in=expiration)
+        return s.dumps({'id': self.id}).decode('utf-8')
+
+    # token验证
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return None
+        return User.query.get(data['id'])
+
+    def to_json(self):
+        user_json = {
+            'url': url_for('api.get_user', id=self.id),
+            'username': self.username,
+            'email': self.email,
+            'nickname': self.nickname,
+            'location': self.location,
+            'about_me': self.about_me,
+            'member_since': self.member_since,
+            'last_seen': self.last_seen,
+            'avatar_url': self.get_avatar_url(),
+            'posts_url': url_for('api.get_posts_for_user', id=self.id),
+
+        }
+        return user_json
+
 
 # 创建一个匿名用户类，从而实现相应的权限 flask-login
 class AnonymousUser(AnonymousUserMixin):
@@ -255,6 +297,26 @@ class Post(db.Model):
         target.body_html = bleach.linkify(
             bleach.clean(markdown(value, output_format='html'), tags=allowed_tags, strip=True))
 
+    # json转换
+    def to_json(self):
+        json_post = {
+            'url': url_for('api.get_post', id=self.id),
+            'body': self.body,
+            'body_html': self.body_html,
+            'created': self.created,
+            'comment_url': url_for('api.get_comments_for_posts', id=self.id),
+            'author_url': url_for('api.get_user', id=self.author_id),
+            'comment_count': self.comments.__len__()
+        }
+        return json_post
+
+    @staticmethod
+    def form_json(json_post):
+        body = json_post.get('body')
+        if body is None or body == '':
+            raise ValidationError('文章没有正文')
+        return Post(body=body)
+
 
 # db.event.listen()是SQLAlchemy的事件监听函数，在本例中监听的是'set'事件，也即指定字段的内容发生改变的情况
 db.event.listen(Post.body, 'set', Post.on_change_body)
@@ -295,6 +357,24 @@ class Comment(db.Model):
                         'h1', 'h2', 'h3', 'p']
         target.body_html = bleach.linkify(
             bleach.clean(markdown(value, output_format='html'), tags=allowed_tags, strip=True))
+
+    def to_json(self):
+        json_comment = {
+            'body': self.body,
+            'body_html': self.body,
+            'timestamp': self.timestamp,
+            'is_ban': self.is_ban,
+            'post_url': url_for('api.get_post', id=self.post_id),
+            'author_url': url_for('api.get_user', id=self.author_id)
+        }
+        return json_comment
+
+    @staticmethod
+    def form_json(json_comment):
+        body = json_comment.get('body')
+        if body is None or body == '':
+            raise ValidationError('评论不能为空')
+        return Comment(body=body)
 
 
 # db.event.listen()是SQLAlchemy的事件监听函数，在本例中监听的是'set'事件，也即指定字段的内容发生改变的情况
